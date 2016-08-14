@@ -72,7 +72,7 @@ def process_evaluation_data(data_dir):
     concatenatefiles([data_dir + "/trainProjectGitURL.txt", data_dir + "/testProjectGitURL.txt"],
                      data_dir + "/ProjectGitURL.txt")
 
-def generate_term_doc_matrix(datapath):
+def generate_and_save_term_doc_matrix(datapath):
     # Create some very short sample documents
     doc1 = 'John and Bob are brothers.'
     doc2 = 'John went to the store. The store was closed.'
@@ -94,22 +94,34 @@ def generate_term_doc_matrix(datapath):
     # appear in a single document. For this example we want to see all
     # words however, hence cutoff=1.
     tdm.write_csv('matrix.csv', cutoff=1)
-    # Instead of writing out the matrix you can also access its rows directly.
-    # Let's print them to the screen.
-    for row in tdm.rows(cutoff=1):
-        print row
+def get_tdm ( tdm_file_path):
+    with open(tdm_file_path, "r") as ins:
+        next(ins)#skip first header line
+        array = []
+        for line in ins:
+            array.append(line)
+    print "Array = ",array[0][20]
+    print "Array Length", len(array)
+    return array
 def main():
     matrix = [[0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0],
               [0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0],
               [1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0],
               [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
+    process_evaluation_data("I:/Dev/PythonProjects/clan_data/project_data")
+    generate_and_save_term_doc_matrix(
+        "I:/Dev/PythonProjects/clan_data/project_data/documents_lsi_data.txt")  # with header
+    matrix = get_tdm("matrix.csv")
+    print "LSI algo started ....."
     transform_matrix = LSISimilarityMatrix(matrix)
-    print transform_matrix
+    print "Dimension transform matrix = ", len(transform_matrix), " ", len(transform_matrix[0])
 
     doc_similarity_matrix = similarity(transform_matrix)
+    print "Dimension doc_similarity_matrix = ", len(doc_similarity_matrix), " ", len(doc_similarity_matrix[0])
+
     search_result = get_rankedlist(1,doc_similarity_matrix)
     print search_result
-    process_evaluation_data("I:/Dev/PythonProjects/clan_data/project_data")
-    generate_term_doc_matrix("I:/Dev/PythonProjects/clan_data/project_data/documents_lsi_data.txt")
+
+
 if __name__ == "__main__":
 	main()
