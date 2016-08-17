@@ -114,16 +114,14 @@ def get_category_stats(categoryfile, query_doc_number):
             category_stats[pcategory] = int(count_key) + 1
     return category_stats
 def main():
-    '''
-    matrix = [[0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0],
-              [0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0],
-              [1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0],
-              [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
-    '''
     #process_evaluation_data("I:/Dev/PythonProjects/clan_data/project_data")
+
+
+    #generate_and_save_term_doc_matrix(
+    #    "I:/Dev/PythonProjects/clan_data/project_data/documents_lsi_data.txt")  # with header
+    #print "Done generate_and_save_term_doc_matrix"
     '''
-    generate_and_save_term_doc_matrix(
-        "I:/Dev/PythonProjects/clan_data/project_data/documents_lsi_data.txt")  # with header
+    print "Reading matrix.csv to matrix"
     matrix = get_tdm("matrix.csv")
 
     print "LSI algo started ....."
@@ -133,20 +131,20 @@ def main():
     generate_similarity(transform_matrix)
     '''
 
+    number_of_query = 49
     doc_similarity_matrix = get_similarity_matrix("similarity_matrix.csv")
     print "Dimension doc_similarity_matrix = ", len(doc_similarity_matrix), " ", len(doc_similarity_matrix[0])
     data_dir = "I:/Dev/PythonProjects/clan_data/project_data/"
     project_name, project_description = readProjectDetails(data_dir+"/ProjectDetails.txt")
     project_name, project_category = readProjectDetails(data_dir + "/ProjectCategory.txt")
     project_name, project_giturl = readProjectDetails(data_dir + "/ProjectGitURL.txt")
-    category_stats = get_category_stats(data_dir + "/ProjectCategory.txt",5)#first 5 is the query number, so training data start from 5th position starting from 0
+    category_stats = get_category_stats(data_dir + "/ProjectCategory.txt",number_of_query)#first nuber_of_query is the query number, so training data start from 5th position starting from 0
     #print category_stats
-    search_result = get_rankedlist(3,doc_similarity_matrix, 5)
-    #print search_result
+    #search_result = get_rankedlist(3,doc_similarity_matrix, 5)
 
     #evaluation results
     save_file_search_results="clan_search_results"
-    number_of_query = 5
+
 
     f = open(save_file_search_results + ".txt", "w")
     # f.write("Rank"+"\t"+"Project Name"+"\t"+"Project Description"+"\t"+"Github URL"+"\t"+"Category"+"\t"+"Judgement(0-5)"+"\n")
@@ -163,7 +161,7 @@ def main():
 
     countQuery = 0
     for queryIndex in xrange(0, number_of_query):
-        distances = get_rankedlist(3, doc_similarity_matrix, 5)#return sorted ranked
+        distances = get_rankedlist(queryIndex, doc_similarity_matrix, number_of_query)#return sorted ranked
         topN = 10
         avgp = 0.0
         avgpAt5 = 0
