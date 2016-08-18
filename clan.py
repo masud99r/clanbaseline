@@ -114,7 +114,7 @@ def get_category_stats(categoryfile, query_doc_number):
             category_stats[pcategory] = int(count_key) + 1
     return category_stats
 def main():
-    #process_evaluation_data("I:/Dev/PythonProjects/clan_data/project_data")
+    process_evaluation_data("I:/Dev/PythonProjects/clan_data/project_data")
 
 
     #generate_and_save_term_doc_matrix(
