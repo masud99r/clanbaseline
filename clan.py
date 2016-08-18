@@ -11,15 +11,20 @@ try:
 except:
 	print "Error: Requires numpy from http://www.scipy.org/. Have you installed scipy?"
 	sys.exit()
+from sklearn.decomposition import TruncatedSVD
 
-
-def LSISimilarityMatrix(matrix):
+def LSISimilarityMatrix(matrix,rank):
     tfidf = TFIDF(matrix)
-    new_tfidf_matrix = tfidf.transform()
+    matrix_tfidf = tfidf.transform()
     #print "TFIDF Transform Matrix\n", new_tfidf_matrix
-    lsa = LSA(new_tfidf_matrix)
-    new_matrix = lsa.transform(2)
+    #lsa = LSA(matrix)
+    #matrix = lsa.transform(2)
     #print "Final Matrix", new_matrix
+    svd = TruncatedSVD(n_components=rank, random_state=42)
+    matrix_reduced = svd.fit_transform(matrix_tfidf)
+    print "Fit done"
+    new_matrix = svd.inverse_transform(matrix_reduced)
+    print "Reduction done"
     return  new_matrix
 
 
@@ -54,13 +59,13 @@ def get_rankedlist(query_index, similarity_matrix,total_query_number):
     distances.sort(key=lambda x: x[1],reverse=True)#sort in reverse order
     return distances
 def process_evaluation_data(data_dir):
-    concatenatefiles([data_dir + "/trainDocForWMD.txt", data_dir + "/testDocForWMD.txt"],
+    concatenatefiles([ data_dir + "/testDocForWMD.txt", data_dir + "/trainDocForWMD.txt"],
                      data_dir + "/documents_lsi_data.txt")
-    concatenatefiles([data_dir + "/trainProjectCategory.txt", data_dir + "/testProjectCategory.txt"],
+    concatenatefiles([data_dir + "/testProjectCategory.txt", data_dir + "/trainProjectCategory.txt"],
                      data_dir + "/ProjectCategory.txt")
-    concatenatefiles([data_dir + "/trainProjectDetails.txt", data_dir + "/testProjectDetails.txt"],
+    concatenatefiles([data_dir + "/testProjectDetails.txt", data_dir + "/trainProjectDetails.txt"],
                      data_dir + "/ProjectDetails.txt")
-    concatenatefiles([data_dir + "/trainProjectGitURL.txt", data_dir + "/testProjectGitURL.txt"],
+    concatenatefiles([data_dir + "/testProjectGitURL.txt", data_dir + "/trainProjectGitURL.txt"],
                      data_dir + "/ProjectGitURL.txt")
 
 def generate_and_save_term_doc_matrix(datapath):
@@ -114,27 +119,27 @@ def get_category_stats(categoryfile, query_doc_number):
             category_stats[pcategory] = int(count_key) + 1
     return category_stats
 def main():
-    process_evaluation_data("I:/Dev/PythonProjects/clan_data/project_data")
+    data_dir = "./data/project_data/"
+    #process_evaluation_data(data_dir)
 
 
-    #generate_and_save_term_doc_matrix(
-    #    "I:/Dev/PythonProjects/clan_data/project_data/documents_lsi_data.txt")  # with header
+    #generate_and_save_term_doc_matrix(data_dir+"/documents_lsi_data.txt")  # with header
     #print "Done generate_and_save_term_doc_matrix"
-    '''
+
     print "Reading matrix.csv to matrix"
     matrix = get_tdm("matrix.csv")
 
     print "LSI algo started ....."
     print "Matrix dim = ",len(matrix)
-    transform_matrix = LSISimilarityMatrix(matrix)
-    print "Dimension transform matrix = ", len(transform_matrix), " ", len(transform_matrix[0])
-    generate_similarity(transform_matrix)
-    '''
+    matrix = LSISimilarityMatrix(matrix,300)
+    print "Dimension transform matrix = ", len(matrix), " ", len(matrix[0])
+    generate_similarity(matrix)
 
-    number_of_query = 49
+
+    number_of_query = 50
     doc_similarity_matrix = get_similarity_matrix("similarity_matrix.csv")
     print "Dimension doc_similarity_matrix = ", len(doc_similarity_matrix), " ", len(doc_similarity_matrix[0])
-    data_dir = "I:/Dev/PythonProjects/clan_data/project_data/"
+
     project_name, project_description = readProjectDetails(data_dir+"/ProjectDetails.txt")
     project_name, project_category = readProjectDetails(data_dir + "/ProjectCategory.txt")
     project_name, project_giturl = readProjectDetails(data_dir + "/ProjectGitURL.txt")
@@ -247,3 +252,4 @@ def main():
 
 if __name__ == "__main__":
 	main()
+print "Done this step"
