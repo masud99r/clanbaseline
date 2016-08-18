@@ -47,15 +47,24 @@ def generate_similarity(lsimatrix):
                 S[j][i] = cosine_value
 
     numpy.savetxt("similarity_matrix.csv", S, delimiter=",")
-def get_rankedlist(query_index, similarity_matrix,total_query_number):
-    if query_index<0 or query_index >= len(similarity_matrix):
+def get_rankedlist(query_index, similarity_matrix_C,similarity_matrix_P,total_query_number):
+    if query_index<0 or query_index >= len(similarity_matrix_C):#P and C would of same dimension
         print "Invalid query index"
         return -1
-    unorder_list = similarity_matrix[query_index]
+
+    unorder_list_P = similarity_matrix_P[query_index]
+    unorder_list_C = similarity_matrix_C[query_index]
+
+    combined_list_PC = []
+    alpha_P = 0.5 #weighted coefficient
+    alpha_C = 0.5
+    for sim_index in range(0, len(similarity_matrix_C)):
+        pc_value = alpha_P * unorder_list_P[sim_index] + alpha_C * unorder_list_C[sim_index]
+        combined_list_PC.append(pc_value)
 
     distances = []
-    for i in range(total_query_number, len(unorder_list)):#skip all queries from candidate document and similarity calculation
-        distances.append((i, unorder_list[i]))
+    for i in range(total_query_number, len(combined_list_PC)):#skip all queries from candidate document and similarity calculation
+        distances.append((i, combined_list_PC[i]))
     distances.sort(key=lambda x: x[1],reverse=True)#sort in reverse order
     return distances
 def process_evaluation_data(data_dir):
@@ -125,7 +134,7 @@ def main():
 
     #generate_and_save_term_doc_matrix(data_dir+"/documents_lsi_data.txt")  # with header
     #print "Done generate_and_save_term_doc_matrix"
-
+    '''
     print "Reading matrix.csv to matrix"
     matrix = get_tdm("matrix.csv")
 
@@ -134,11 +143,13 @@ def main():
     matrix = LSISimilarityMatrix(matrix,300)
     print "Dimension transform matrix = ", len(matrix), " ", len(matrix[0])
     generate_similarity(matrix)
-
+    '''
 
     number_of_query = 50
-    doc_similarity_matrix = get_similarity_matrix("similarity_matrix.csv")
-    print "Dimension doc_similarity_matrix = ", len(doc_similarity_matrix), " ", len(doc_similarity_matrix[0])
+    doc_similarity_matrix_C = get_similarity_matrix("similarity_matrix_C.csv")
+    doc_similarity_matrix_P = get_similarity_matrix("similarity_matrix_P.csv")
+    print "Dimension doc_similarity_matrix C = ", len(doc_similarity_matrix_C), " ", len(doc_similarity_matrix_C[0])
+    print "Dimension doc_similarity_matrix P = ", len(doc_similarity_matrix_P), " ", len(doc_similarity_matrix_P[0])
 
     project_name, project_description = readProjectDetails(data_dir+"/ProjectDetails.txt")
     project_name, project_category = readProjectDetails(data_dir + "/ProjectCategory.txt")
@@ -166,7 +177,7 @@ def main():
 
     countQuery = 0
     for queryIndex in xrange(0, number_of_query):
-        distances = get_rankedlist(queryIndex, doc_similarity_matrix, number_of_query)#return sorted ranked
+        distances = get_rankedlist(queryIndex, doc_similarity_matrix_C, doc_similarity_matrix_P, number_of_query)#return sorted ranked
         topN = 10
         avgp = 0.0
         avgpAt5 = 0
