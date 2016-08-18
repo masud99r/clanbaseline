@@ -117,10 +117,10 @@ def main():
     #process_evaluation_data("I:/Dev/PythonProjects/clan_data/project_data")
 
 
-    #generate_and_save_term_doc_matrix(
-    #    "I:/Dev/PythonProjects/clan_data/project_data/documents_lsi_data.txt")  # with header
-    #print "Done generate_and_save_term_doc_matrix"
-    '''
+    generate_and_save_term_doc_matrix(
+        "I:/Dev/PythonProjects/clan_data/project_data/documents_lsi_data.txt")  # with header
+    print "Done generate_and_save_term_doc_matrix"
+
     print "Reading matrix.csv to matrix"
     matrix = get_tdm("matrix.csv")
 
@@ -129,9 +129,9 @@ def main():
     transform_matrix = LSISimilarityMatrix(matrix)
     print "Dimension transform matrix = ", len(transform_matrix), " ", len(transform_matrix[0])
     generate_similarity(transform_matrix)
-    '''
 
-    number_of_query = 49
+
+    number_of_query = 5
     doc_similarity_matrix = get_similarity_matrix("similarity_matrix.csv")
     print "Dimension doc_similarity_matrix = ", len(doc_similarity_matrix), " ", len(doc_similarity_matrix[0])
     data_dir = "I:/Dev/PythonProjects/clan_data/project_data/"
