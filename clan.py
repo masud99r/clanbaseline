@@ -12,6 +12,7 @@ except:
 	print "Error: Requires numpy from http://www.scipy.org/. Have you installed scipy?"
 	sys.exit()
 from sklearn.decomposition import TruncatedSVD
+import time
 
 def LSISimilarityMatrix(matrix,rank):
     tfidf = TFIDF(matrix)
@@ -46,7 +47,20 @@ def generate_similarity(lsimatrix):
                 S[i][j] = cosine_value
                 S[j][i] = cosine_value
 
-    numpy.savetxt("similarity_matrix.csv", S, delimiter=",")
+    numpy.savetxt("similarity_matrix_300_P.csv", S, delimiter=",")
+def get_rankedlist_individual(query_index, similarity_matrix,total_query_number):
+    if query_index<0 or query_index >= len(similarity_matrix):#P and C would of same dimension
+        print "Invalid query index"
+        return -1
+
+    unorder_list = similarity_matrix[query_index]
+
+    distances = []
+    for i in range(total_query_number, len(unorder_list)):#skip all queries from candidate document and similarity calculation
+        distances.append((i, unorder_list[i]))
+    distances.sort(key=lambda x: x[1],reverse=True)#sort in reverse order
+    return distances
+
 def get_rankedlist(query_index, similarity_matrix_C,similarity_matrix_P,total_query_number):
     if query_index<0 or query_index >= len(similarity_matrix_C):#P and C would of same dimension
         print "Invalid query index"
@@ -56,8 +70,8 @@ def get_rankedlist(query_index, similarity_matrix_C,similarity_matrix_P,total_qu
     unorder_list_C = similarity_matrix_C[query_index]
 
     combined_list_PC = []
-    alpha_P = 0.5 #weighted coefficient
-    alpha_C = 0.5
+    alpha_P = 0.3 #weighted coefficient
+    alpha_C = 0.7
     for sim_index in range(0, len(similarity_matrix_C)):
         pc_value = alpha_P * unorder_list_P[sim_index] + alpha_C * unorder_list_C[sim_index]
         combined_list_PC.append(pc_value)
@@ -148,8 +162,8 @@ def main():
     number_of_query = 50
     doc_similarity_matrix_C = get_similarity_matrix("similarity_matrix_C.csv")
     doc_similarity_matrix_P = get_similarity_matrix("similarity_matrix_P.csv")
-    print "Dimension doc_similarity_matrix C = ", len(doc_similarity_matrix_C), " ", len(doc_similarity_matrix_C[0])
-    print "Dimension doc_similarity_matrix P = ", len(doc_similarity_matrix_P), " ", len(doc_similarity_matrix_P[0])
+    #print "Dimension doc_similarity_matrix C = ", len(doc_similarity_matrix_C), " ", len(doc_similarity_matrix_C[0])
+    #print "Dimension doc_similarity_matrix P = ", len(doc_similarity_matrix_P), " ", len(doc_similarity_matrix_P[0])
 
     project_name, project_description = readProjectDetails(data_dir+"/ProjectDetails.txt")
     project_name, project_category = readProjectDetails(data_dir + "/ProjectCategory.txt")
@@ -159,10 +173,11 @@ def main():
     #search_result = get_rankedlist(3,doc_similarity_matrix, 5)
 
     #evaluation results
-    save_file_search_results="clan_search_results"
+    save_file_search_results="clan_search_results_with_results_save"
 
 
     f = open(save_file_search_results + ".txt", "w")
+
     # f.write("Rank"+"\t"+"Project Name"+"\t"+"Project Description"+"\t"+"Github URL"+"\t"+"Category"+"\t"+"Judgement(0-5)"+"\n")
     # print "Rank"+"\t"+"Project Name"+"\t"+"Project Description"+"\t"+"Github URL"+"\t"+"Category"+"\t"+"Judgement(0-5)"+"\n"
     MAP = 0
@@ -178,6 +193,7 @@ def main():
     countQuery = 0
     for queryIndex in xrange(0, number_of_query):
         distances = get_rankedlist(queryIndex, doc_similarity_matrix_C, doc_similarity_matrix_P, number_of_query)#return sorted ranked
+        #distances =get_rankedlist_individual(queryIndex, doc_similarity_matrix_P, number_of_query)
         topN = 10
         avgp = 0.0
         avgpAt5 = 0
@@ -199,9 +215,26 @@ def main():
         true_relevane = category_stats.get(project_category[queryIndex].replace("\n", ""),
                                            0)  # minimum between n and total relevance document, n is top
         totalCategoryRelevance = min(topN, true_relevane)
+
+        query_project_name =project_name[queryIndex]
+        query_project_description_with_pname = project_description[queryIndex]
+        query_project_description_without_pname = query_project_description_with_pname.replace(query_project_name, "",
+                                                                                               1).strip()
+
+        f.write("Query:" + str(
+            queryIndex + 1) + "\t" + "Search Project: " + query_project_name + "\t" + query_project_description_without_pname.replace(
+            "\n", "") + "\t" + project_giturl[queryIndex].replace("\n", "") + "\t" + project_category[queryIndex])
+
         if totalCategoryRelevance > 0:
             countQuery = countQuery + 1  # include this query in the MAP calculation
         for i in range(1, len(distances)):
+            candidateIndex = distances[i][0]
+            candidate_project_name = project_name[candidateIndex]
+            candidate_project_description_with_pname = project_description[candidateIndex]
+            candidate_project_description_without_pname = candidate_project_description_with_pname.replace(candidate_project_name, "", 1).strip()
+
+            f.write(str(i) + "\t" + candidate_project_name + "\t" + candidate_project_description_without_pname.replace("\n", "") + "\t" + project_giturl[candidateIndex].replace("\n", "") + "\t" + project_category[candidateIndex])
+
             if (project_category[queryIndex] == project_category[distances[i][0]]):
                 countRelavance = countRelavance + 1
                 countRelavance_10 = countRelavance_10 + 1
@@ -255,12 +288,15 @@ def main():
         P_MapAt5 = (P_MapAt5 * 1.0) / countQuery
         P_MapAt1 = (P_MapAt1 * 1.0) / countQuery
         P_MapAt3 = (P_MapAt3 * 1.0) / countQuery
-
+    f.write("Final Evaluation Results: \n")
     f.write(str(MapAt1) + "\t" + str(MapAt3) + "\t" + str(MapAt5) + "\t" + str(MAP) + "\t" + str(P_MapAt1) + "\t" + str(
         P_MapAt3) + "\t" + str(P_MapAt5) + "\t" + str(P_MAP) + "\n")
     print(str(MapAt1) + "\t" + str(MapAt3) + "\t" + str(MapAt5) + "\t" + str(MAP) + "\t" + str(P_MapAt1) + "\t" + str(
         P_MapAt3) + "\t" + str(P_MapAt5) + "\t" + str(P_MAP) + "\n")
 
 if __name__ == "__main__":
-	main()
-print "Done this step"
+    start  = time.time()
+    main()
+    end  = time.time()
+    print "Time Elapsed = ",(end - start)
+    print "Done this step"
